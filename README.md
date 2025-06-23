@@ -30,8 +30,14 @@ This project enables users to query operational, asset, and configuration data u
    ```sh
    git clone <repository-url>
    cd duplo-assistant
-
-2. **Set up the backend**
+2. **Install dependencies**
+   - For the backend, ensure you have Java and Gradle installed.
+   - For the Python environment, install the required packages:
+     ```sh
+     cd duplo_document_assistant
+     pip install -r requirements.txt
+     ```
+3. **Set up the backend**
 
 - Ensure Java and Gradle are installed.
 - Build and run the Spring Boot application:
