@@ -101,6 +101,11 @@ public class QueryExecutionService {
                 Object mcpResult = mcpActionDispatcher.dispatch(action, params);
                 log.info("MCP action result: {}", mcpResult);
 
+                if ("validate_user_request".equals(action) && mcpResult instanceof String && !"Valid".equals(mcpResult)) {
+                    finalResult = mcpResult.toString();
+                    break;
+                }
+
                 // Save turn in history
                 ConversationTurn turn = new ConversationTurn();
                 turn.setTurn(history.getHistory().size() + 1);
@@ -333,12 +338,35 @@ public class QueryExecutionService {
         throw new IllegalArgumentException("No SQL query found in LLM response");
     }
 
-    // Validates if the user query is relevant and actionable
     public String validateUserRequest(String userQuery) {
         if (userQuery == null || userQuery.trim().isEmpty()) {
             return "Invalid: UserQuery is empty.";
         }
-        // Add more advanced checks as needed (e.g., off-topic, chit-chat detection)
+
+        if (userQuery.trim().length() < 5) {
+            return "Invalid: Query too short.";
+        }
+
+        List<String> relevantContext = ragService.retrieveRelevantContext(userQuery, "");
+        boolean hasRagContext = relevantContext != null && !relevantContext.isEmpty();
+
+        // ✅ Fallback if embeddings fail: check for schema-relevance
+        boolean matchesSchemaDirectly = ragService.isLikelySchemaRelevant(userQuery);
+
+        if (!hasRagContext && !matchesSchemaDirectly) {
+            return "Invalid: Query does not match any known tables or columns (embedding or schema check).";
+        }
+
+        // Optional: If RAG context was found, ensure it includes schema terms
+        if (hasRagContext) {
+            boolean containsSchemaTerm = relevantContext.stream()
+                    .anyMatch(ctx -> schemaService.getAllTableAndColumnNames().stream()
+                            .anyMatch(name -> ctx.toLowerCase().contains(name.toLowerCase())));
+            if (!containsSchemaTerm) {
+                return "Invalid: Query is not relevant to database schema.";
+            }
+        }
+
         return "Valid";
     }
 
