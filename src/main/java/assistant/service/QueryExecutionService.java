@@ -13,11 +13,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.io.*;
 import java.time.Instant;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -73,6 +71,11 @@ public class QueryExecutionService {
         String previousContext = history.getHistory().stream()
                 .map(turn -> "User: " + turn.getUserQuery() + "\nAI: " + turn.getLlmFormattedResponse())
                 .collect(Collectors.joining("\n"));
+
+        String intent = checkIntent(userQuery);
+        if (Objects.equals(intent, "answer")){
+           return getDocumentAssistAnswer(userQuery);
+        }
 
         List<String> relevantRAGChunks = ragService.retrieveRelevantContext(userQuery, previousContext);
         String ragContext = String.join("\n", relevantRAGChunks);
@@ -391,5 +394,49 @@ public class QueryExecutionService {
         int rowCount = results.size();
         int colCount = results.get(0).size();
         return "Rows: " + rowCount + ", Columns: " + colCount;
+    }
+
+    // Checks the intent of a given text using an external Python script
+    public String checkIntent(String text) {
+        try {
+            File pythonScript = new File(System.getProperty("user.dir") + "/duplo_document_assist/intent.py");
+            if (!pythonScript.exists()) {
+                throw new RuntimeException("Python script not found: " + pythonScript.getAbsolutePath());
+            }
+            ProcessBuilder pb = new ProcessBuilder("python3", System.getProperty("user.dir") + "/duplo_document_assist/intent.py", text);
+            //pb.directory(new File("duplo_document_assist"));
+
+            Process process = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            StringBuilder output = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line);
+            }
+            process.waitFor();
+            return output.toString();
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
+        }
+    }
+    public String getDocumentAssistAnswer(String query) {
+        try {
+            File pythonScript = new File(System.getProperty("user.dir") + "/duplo_document_assist/app.py");
+            if (!pythonScript.exists()) {
+                throw new RuntimeException("Python script not found: " + pythonScript.getAbsolutePath());
+            }
+            ProcessBuilder pb = new ProcessBuilder("python3", System.getProperty("user.dir") + "/duplo_document_assist/app.py", query);
+            Process process = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            StringBuilder output = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line);
+            }
+            process.waitFor();
+            return output.toString();
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
+        }
     }
 }

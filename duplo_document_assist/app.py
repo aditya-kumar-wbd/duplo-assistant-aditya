@@ -2,22 +2,21 @@ from langchain_chroma import Chroma
 from langchain.prompts import ChatPromptTemplate
 from langchain_ollama import OllamaEmbeddings, OllamaLLM
 from get_embedding_function import get_embedding_function
+import sys
 import os
-import streamlit as st
 from intent import get_best_intent
 import requests
 
-from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS
+# from flask import Flask, request, jsonify, render_template
+# from flask_cors import CORS
+#
+# # app = Flask(__name__)
+# CORS(app)
+#
 
-app = Flask(__name__)
-CORS(app)
-
-
-
-current_path = os.getcwd()
-CHROMA_PATH = current_path + "/db_chat"
-FRONT_END_PATH = current_path + "/templates/template.html"
+script_dir = os.path.dirname(os.path.abspath(__file__))
+CHROMA_PATH = script_dir + "/db_chat"
+FRONT_END_PATH = script_dir + "/templates/template.html"
 
 PROMPT_TEMPLATE = """
 Answer the question based only on the following context:
@@ -45,35 +44,41 @@ def query_rag(query_text: str):
     sources = [doc.metadata.get("id", None) for doc, _score in results]
     return response_text, sources
 
+#
+# @app.route('/')
+# def home():
+#     return render_template('template.html')
+#
+# @app.route('/process', methods=['POST'])
+# def process():
+#     data = request.json
+#     query_text = data['text']
+#     conversationId = data['conversationID']
+#     if not query_text:
+#         return jsonify({'error': 'No query text provided'}), 400
+#     intent = get_best_intent(query_text)
+#     if intent =="answer":
+#         result,sources = query_rag(query_text)
+#         data = jsonify({'result': result, "sources": sources})
+#         return data
+#     if intent == "sql":
+#         url = "http://localhost:8080/assistant?conversationId=" + conversationId
+#         headers = {"Content-Type": "text/plain"}
+#         response = requests.post(url, headers=headers, data=query_text)
+#         return response
+#
+#
 
-@app.route('/')
-def home():
-    return render_template('template.html')
+def main():
+    name = sys.argv[1]
+    results,sources = query_rag(name)
+    print(results)
 
-@app.route('/process', methods=['POST'])
-def process():
-    data = request.json
-    query_text = data['text']
-    conversationId = data['conversationID']
-    if not query_text:
-        return jsonify({'error': 'No query text provided'}), 400
-    intent = get_best_intent(query_text)
-    if intent =="answer":
-        result,sources = query_rag(query_text)
-        data = jsonify({'result': result, "sources": sources})
-        return data
-    if intent == "sql":
-        url = "http://localhost:8080/assistant?conversationId=" + conversationId
-        headers = {"Content-Type": "text/plain"}
-        response = requests.post(url, headers=headers, data=query_text)
-        return response
+if __name__ == "__main__":
+    main()
 
 
-
-
-
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+#
+# if __name__ == '__main__':
+#     app.run(debug=True)
 

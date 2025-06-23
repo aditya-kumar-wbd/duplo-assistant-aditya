@@ -1,5 +1,6 @@
 import numpy as np
 from sentence_transformers import SentenceTransformer
+import sys
 
 model = SentenceTransformer("all-MiniLM-L6-v2")  # Lightweight, fast, and accurate
 
@@ -38,5 +39,13 @@ def get_best_intent(user_prompt):
             best_intent = intent
 
     return best_intent
+
+
+def main():
+    name = sys.argv[1]
+    print(get_best_intent(name))
+
+if __name__ == "__main__":
+    main()
 
 

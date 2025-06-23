@@ -1,0 +1,8 @@
+langchain==0.3.26
+langchain_chroma==0.2.4
+langchain_community==0.3.26
+langchain_ollama==0.3.3
+langchain_text_splitters==0.3.8
+numpy==2.3.1
+Requests==2.32.4
+sentence_transformers==4.1.0

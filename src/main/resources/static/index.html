@@ -118,8 +118,8 @@
     addMessage(prompt, "user");
     promptInput.value = "";
 
-    const botMessage = addMessage("🤖 Duplo A is thinking...", "bot");
-    const botMessage2 = addMessage("🤖 Duplo B is thinking...", "bot");
+    const botMessage = addMessage("🤖 Duplo is thinking...", "bot");
+    // const botMessage2 = addMessage("🤖 Duplo B is thinking...", "bot");
 
     try {
       const response = await fetch(`http://localhost:8080/assistant?conversationId=${conversationId}`, {
@@ -133,18 +133,18 @@
     } catch (err) {
       botMessage.textContent = "❌ Error: " + err.message;
     }
-    try {
-      const response = await fetch("http://localhost:5000/process", {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ "text": prompt })
-      });
-
-      const text = await response.json();
-      botMessage2.textContent = text.result + "\n" + text.sources + "\n"  || "No response.";
-    } catch (err) {
-      botMessage2.textContent = "❌ Error: " + err.message;
-    }
+    // try {
+    //   const response = await fetch("http://localhost:5000/process", {
+    //     method: "POST",
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify({ "text": prompt })
+    //   });
+    //
+    //   const text = await response.json();
+    //   botMessage2.textContent = text.result + "\n" + text.sources + "\n"  || "No response.";
+    // } catch (err) {
+    //   botMessage2.textContent = "❌ Error: " + err.message;
+    // }
 
     chat.scrollTop = chat.scrollHeight;
   }
