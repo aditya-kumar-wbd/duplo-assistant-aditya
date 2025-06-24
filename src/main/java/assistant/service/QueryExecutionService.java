@@ -33,6 +33,7 @@ public class QueryExecutionService {
     private final SchemaService schemaService;
     private final RAGService ragService;
     private final McpActionDispatcher mcpActionDispatcher;
+    private String intent;
 
     @Value("${llm.model.name}")
     private String llmModelName;
@@ -77,10 +78,29 @@ public class QueryExecutionService {
                 .map(turn -> "User: " + turn.getUserQuery() + "\nAI: " + turn.getLlmFormattedResponse())
                 .collect(Collectors.joining("\n"));
 
-        String intent = checkIntent(userQuery);
+        intent = checkIntent(userQuery);
         if (Objects.equals(intent, "answer")){
            return getDocumentAssistAnswer(userQuery);
         }
+
+        String wo_id = "";
+        if (Objects.equals(intent, "check_error")){
+            userQuery = String.format("what is the workorder_status of work_order_id = '%s'", wo_id);
+        }
+        /** *
+         * use the classification intent to determine the next steps
+         * if "sql" use the existing orchestration logic
+         * if "document" use the document intent action - change answer to the document intent action
+         * if "check_error" use the check_error action -
+         * 1. generate sql to get wo status
+         * 2. execute the sql
+         * 3. if the sql returns "Caption Failed", proceed with the next actions, if not return "yet to be implemented, currently only works for Caption Failed validations"
+         * 4. generate sql to get wo due date
+         * 5. execute the sql
+         * 6. check if the due date is within SLA(1 day from present date)
+         * 7. if failed, return "Caption Failed" due to SLA breach, if not SLA breach, proceed with the next validations
+         * 8. check with manifestation api. (discuss tomorrow)
+         */
 
         List<String> relevantRAGChunks = ragService.retrieveRelevantContext(userQuery, previousContext);
         String ragContext = String.join("\n", relevantRAGChunks);
