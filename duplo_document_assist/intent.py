@@ -20,15 +20,20 @@ intent_anchors = {
         "What happens after the free trial ends?"
     ]
 }
-
+duplo_link = "apps.dev.dsuite.tech"
 def cosine_similarity(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 def get_best_intent(user_prompt):
+
+    if duplo_link in user_prompt:
+        return "check error"
+
     user_embedding = model.encode(user_prompt)
     best_intent = None
     best_score = -1
 
+    
     for intent, examples in intent_anchors.items():
 
         scores = [cosine_similarity(user_embedding, model.encode(example)) for example in examples]
