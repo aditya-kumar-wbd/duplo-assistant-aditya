@@ -3,7 +3,9 @@ package assistant.service;
 import assistant.mcp.McpActionDispatcher;
 import assistant.model.ConversationHistory;
 import assistant.model.ConversationTurn;
+import assistant.model.SqlHistory;
 import assistant.repository.ConversationHistoryRepository;
+import assistant.repository.SqlHistoryRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -26,6 +28,7 @@ public class QueryExecutionService {
     private final JdbcTemplate jdbcTemplate;
     private final ChatLanguageModel chatModel;
     private final ConversationHistoryRepository conversationHistoryRepository;
+    private final SqlHistoryRepository sqlHistoryRepository;
     private final ObjectMapper objectMapper;
     private final SchemaService schemaService;
     private final RAGService ragService;
@@ -39,7 +42,8 @@ public class QueryExecutionService {
                                  ConversationHistoryRepository conversationHistoryRepository,
                                  SchemaService schemaService,
                                  RAGService ragService,
-                                 McpActionDispatcher mcpActionDispatcher) {
+                                 McpActionDispatcher mcpActionDispatcher,
+                                 SqlHistoryRepository sqlHistoryRepository) {
         this.jdbcTemplate = jdbcTemplate;
         this.chatModel = chatModel;
         this.conversationHistoryRepository = conversationHistoryRepository;
@@ -47,6 +51,7 @@ public class QueryExecutionService {
         this.schemaService = schemaService;
         this.ragService = ragService;
         this.mcpActionDispatcher = mcpActionDispatcher;
+        this.sqlHistoryRepository = sqlHistoryRepository;
     }
 
     public String executeTestQuery(String workOrderId) {
@@ -123,6 +128,14 @@ public class QueryExecutionService {
 
                 if (isTerminal && !hasError) {
                     finalResult = objectMapper.writeValueAsString(mcpResult);
+                    if ("execute_query".equals(action)) {
+                        Map newParams = objectMapper.convertValue(node.get("params"), Map.class);
+                        String sql = (String) newParams.get("sql");
+                        SqlHistory history1 = new SqlHistory();
+                        history1.setQuery(userQuery);
+                        history1.setSuccessfulSql(sql);
+                        sqlHistoryRepository.save(history1);
+                    }
                     break;
                 }
 

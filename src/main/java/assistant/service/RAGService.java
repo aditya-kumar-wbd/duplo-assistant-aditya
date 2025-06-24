@@ -87,7 +87,7 @@ public class RAGService {
 
             if (kbEmbedding != null && !kbEmbedding.isEmpty()) {
                 double similarity = cosineSimilarity(queryEmbedding, kbEmbedding);
-                if (similarity > 0.7) {
+                if (similarity > 0.5) {
                     scoredChunks.add(Map.entry(similarity, text));
                 }
             }
